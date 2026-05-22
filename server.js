@@ -1,19 +1,21 @@
-const express = require('express')
-const cors = require('cors')
-require('dotenv').config()
+const express = require('express');
+const cors = require('cors');
 
-const app = express()
-const PORT = process.env.PORT || 3000
+const pool = require('./src/config/db');
+const authRoutes = require('./src/routes/auth.routes');
 
-app.use(cors())
-app.use(express.json())
+const app = express();
 
-require('./src/config/db')
+app.use(cors());
+app.use(express.json());
+app.use('/api/auth', authRoutes);
+
 
 app.get('/', (req, res) => {
-    res.json({ mensaje: 'Servidor corriendo correctante' })
-})
+    res.send('API de Security funcionando correctamente');
+});
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`)
-})
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
