@@ -1,4 +1,4 @@
-/*const pool = require('../config/db')
+const pool = require('../config/db')
 
 // Controlador para obtener todas las zonas con totales del mes actual
 const getZonas = async (req, res) => {
@@ -93,4 +93,4 @@ module.exports = {
     crearZona,
     editarZona,
     desactivarZona
-};*/
+};

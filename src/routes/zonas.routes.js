@@ -1,6 +1,7 @@
-/*const router = require('express').Router()
-const auth = require('../middlewares/auth')
-const { getZonas, getZonaById, crearZona, editarZona, desactivarZona } = require('./zonas.controller')
+const express = require('express');
+const router = express.Router();
+const auth = require('../middlewares/auth');
+const { getZonas, getZonaById, crearZona, editarZona, desactivarZona } = require('../controllers/zonas.controller');
 
 
 
@@ -10,4 +11,4 @@ router.post('/', auth, crearZona)
 router.put('/:id', auth, editarZona)
 router.delete('/:id', auth, desactivarZona)
 
-module.exports = router*/
+module.exports = router
