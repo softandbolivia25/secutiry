@@ -6,6 +6,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const zonasRoutes = require('./src/routes/zonas.routes');
 const clientesRoutes = require('./src/routes/clientes.routes');
 const cobranzasRoutes = require('./src/routes/cobranzas.routes');
+const dashboardRoutes = require('./src/routes/dashboard.routes');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/zonas', zonasRoutes);
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/cobranzas', cobranzasRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 
 app.get('/', (req, res) => {
