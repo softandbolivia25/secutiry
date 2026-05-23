@@ -7,7 +7,6 @@ const getClientes = async (req, res) => {
             `SELECT c.*, z.nombre AS zona_nombre
              FROM clientes c
              JOIN zonas z ON c.zona_id = z.id
-             WHERE c.activo = true
              ORDER BY c.id`
         )
         res.json(result.rows)
@@ -116,14 +115,18 @@ const editarCliente = async (req, res) => {
 const desactivarCliente = async (req, res) => {
     const { id } = req.params
     try {
-        const result = await pool.query(
-            'UPDATE clientes SET activo = FALSE WHERE id = $1 RETURNING *',
-            [id]
+        const actual = await pool.query(
+            'SELECT activo FROM clientes WHERE id = $1', [id]
         )
-        if (result.rows.length === 0) {
+        if (actual.rows.length === 0) {
             return res.status(404).json({ error: 'Cliente no encontrado' })
         }
-        res.json({ mensaje: 'Cliente desactivado correctamente' })
+        const nuevoEstado = !actual.rows[0].activo
+        await pool.query(
+            'UPDATE clientes SET activo = $1 WHERE id = $2',
+            [nuevoEstado, id]
+        )
+        res.json({ mensaje: `Cliente ${nuevoEstado ? 'activado' : 'desactivado'} correctamente` })
     } catch (err) {
         console.error('Error al desactivar cliente:', err.message)
         res.status(500).json({ error: 'Error interno del servidor' })

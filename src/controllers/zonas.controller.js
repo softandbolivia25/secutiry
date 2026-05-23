@@ -3,7 +3,11 @@ const pool = require('../config/db')
 // Controlador para obtener todas las zonas con totales del mes actual
 const getZonas = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM vista_zonas_totales')
+        const result = await pool.query(`
+            SELECT id, nombre, activo, created_at 
+            FROM zonas 
+            ORDER BY nombre ASC
+        `)
         res.json(result.rows)
     } catch (err) {
         console.error('Error al obtener zonas:', err.message)

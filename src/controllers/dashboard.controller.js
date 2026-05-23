@@ -7,7 +7,9 @@ const getResumenGeneral = async (req, res) => {
         const result = await pool.query(`
             SELECT
                 COUNT(DISTINCT c.id) AS total_clientes,
-                COALESCE(SUM(c.monto_mensual), 0) AS total_a_cobrar,
+                COALESCE(SUM(CASE WHEN co.estado IN ('pendiente', 'vencido') THEN co.monto
+                WHEN co.estado IS NULL THEN c.monto_mensual
+                ELSE 0 END), 0) AS total_a_cobrar,
                 COALESCE(SUM(CASE WHEN co.estado = 'pagado' THEN co.monto ELSE 0 END), 0) AS total_cobrado,
                 COUNT(CASE WHEN co.estado = 'vencido' THEN 1 END) AS total_vencidas
             FROM clientes c
@@ -31,13 +33,13 @@ const getRecaudacionPorZona = async (req, res) => {
             SELECT
                 z.id   AS zona_id,
                 z.nombre AS zona,
-                COUNT(c.id) AS total_clientes,
-                COALESCE(SUM(c.monto_mensual), 0) AS total_a_cobrar,
-                COALESCE(SUM(CASE WHEN co.estado = 'pagado' THEN co.monto ELSE 0 END), 0) AS total_cobrado,
-                COALESCE(SUM(CASE WHEN co.estado IN ('pendiente', 'vencido') THEN co.monto ELSE 0 END), 0) AS total_pendiente,
-                COALESCE(SUM(CASE WHEN co.estado = 'vencido' THEN co.monto ELSE 0 END), 0) AS total_vencido
+                COUNT(c.id)                                                                                    AS total_clientes,
+                COALESCE(SUM(c.monto_mensual), 0)                                                             AS total_a_cobrar,
+                COALESCE(SUM(CASE WHEN co.estado = 'pagado'    THEN co.monto ELSE 0 END), 0)                  AS total_cobrado,
+                COALESCE(SUM(CASE WHEN co.estado = 'pendiente' THEN co.monto ELSE 0 END), 0)                  AS total_pendiente,
+                COALESCE(SUM(CASE WHEN co.estado = 'vencido'   THEN co.monto ELSE 0 END), 0)                  AS total_vencido
             FROM zonas z
-            LEFT JOIN clientes c ON c.zona_id = z.id AND c.activo = true
+            LEFT JOIN clientes c  ON c.zona_id = z.id AND c.activo = true
             LEFT JOIN cobranzas co ON co.cliente_id = c.id
                                   AND co.periodo = TO_CHAR(NOW(), 'YYYY-MM')
             WHERE z.activo = true
