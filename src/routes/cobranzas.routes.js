@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/auth');
-const { getCobranzas, getCobranzaById, getCobranzasByCliente, getCobranzasByEstado, crearCobranza, editarCobranza, registrarPago, eliminarCobranza } = require('../controllers/cobranzas.controller');
+const { getCobranzas, getCobranzaById, getCobranzasByCliente, getCobranzasByEstado, crearCobranza, editarCobranza, registrarPago, eliminarCobranza, generarCobranzasMes } = require('../controllers/cobranzas.controller');
 
 
 
@@ -13,5 +13,6 @@ router.post('/', auth, crearCobranza)
 router.put('/:id', auth, editarCobranza)
 router.patch('/:id/pago', auth, registrarPago)
 router.delete('/:id', auth, eliminarCobranza)
+router.post('/generar-mes', auth, generarCobranzasMes)
 
 module.exports = router

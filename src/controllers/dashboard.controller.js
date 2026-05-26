@@ -175,11 +175,43 @@ const getProximasAVencer = async (req, res) => {
     }
 }
 
+// Controlador de resumen por zona
+const getResumenPorZona = async (req, res) => {
+    const { zona_id } = req.query
+
+    try {
+        const whereZona = zona_id ? 'AND z.id = $1' : ''
+        const params = zona_id ? [zona_id] : []
+
+        const result = await pool.query(`
+            SELECT
+                COUNT(DISTINCT c.id)                                                        AS total_clientes,
+                COALESCE(SUM(CASE WHEN co.estado IN ('pendiente', 'vencido') THEN co.monto
+                               WHEN co.estado IS NULL THEN c.monto_mensual
+                               ELSE 0 END), 0)                                             AS total_a_cobrar,
+                COALESCE(SUM(CASE WHEN co.estado = 'pagado' THEN co.monto ELSE 0 END), 0)  AS total_cobrado,
+                COUNT(CASE WHEN co.estado = 'vencido' THEN 1 END)                          AS total_vencidas
+            FROM clientes c
+            JOIN zonas z ON z.id = c.zona_id
+            LEFT JOIN cobranzas co
+                   ON co.cliente_id = c.id
+                  AND co.periodo = TO_CHAR(NOW(), 'YYYY-MM')
+            WHERE c.activo = true ${whereZona}
+        `, params)
+
+        res.json(result.rows[0])
+    } catch (err) {
+        console.error('Error en resumen por zona:', err.message)
+        res.status(500).json({ error: 'Error interno del servidor' })
+    }
+}
+
 module.exports = {
     getResumenGeneral,
     getRecaudacionPorZona,
     getEstadoDelMes,
     getEvolucionMensual,
     getTopMorosos,
-    getProximasAVencer
+    getProximasAVencer,
+    getResumenPorZona
 };

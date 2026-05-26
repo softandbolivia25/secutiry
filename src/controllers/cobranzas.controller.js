@@ -173,6 +173,63 @@ const eliminarCobranza = async (req, res) => {
         console.error('Error al eliminar cobranza:', err.message)
         res.status(500).json({ error: 'Error interno del servidor' })
     }
+};
+
+// Generar cobranzas masivas para todos los clientes activos del mes actual
+const generarCobranzasMes = async (req, res) => {
+    const periodo = req.body.periodo || new Date().toISOString().slice(0, 7)
+
+    try {
+        const clientes = await pool.query(`
+            SELECT id, monto_mensual, dia_vencimiento 
+            FROM clientes 
+            WHERE activo = true
+        `)
+
+        let generadas = 0
+        let omitidas = 0
+
+        for (const cliente of clientes.rows) {
+            const fecha_vencimiento = `${periodo}-${String(cliente.dia_vencimiento).padStart(2, '0')}`
+
+            try {
+                await pool.query(`
+                    INSERT INTO cobranzas (cliente_id, periodo, monto, fecha_vencimiento)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (cliente_id, periodo) DO NOTHING
+                `, [cliente.id, periodo, cliente.monto_mensual, fecha_vencimiento])
+
+                generadas++
+            } catch {
+                omitidas++
+            }
+        }
+
+        res.json({
+            mensaje: `Cobranzas generadas para el periodo ${periodo}`,
+            generadas,
+            omitidas,
+        })
+    } catch (err) {
+        console.error('Error al generar cobranzas:', err.message)
+        res.status(500).json({ error: 'Error interno del servidor' })
+    }
+}
+
+// Actualizar estados vencidos
+const actualizarVencidas = async () => {
+    try {
+        const result = await pool.query(`
+            UPDATE cobranzas
+            SET estado    = 'vencido',
+                dias_mora = GREATEST(0, CURRENT_DATE - fecha_vencimiento)
+            WHERE estado = 'pendiente'
+              AND fecha_vencimiento < CURRENT_DATE
+        `)
+        console.log(`✅ Estados actualizados: ${result.rowCount} cobranzas vencidas`)
+    } catch (err) {
+        console.error('❌ Error al actualizar vencidas:', err.message)
+    }
 }
 
 module.exports = {
@@ -183,5 +240,7 @@ module.exports = {
     crearCobranza,
     editarCobranza,
     registrarPago,
-    eliminarCobranza
-}
+    eliminarCobranza,
+    generarCobranzasMes,
+    actualizarVencidas
+};
