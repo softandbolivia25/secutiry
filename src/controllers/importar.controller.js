@@ -83,6 +83,12 @@ const importarClientes = async (req, res) => {
 
             } catch (err) {
                 errores.push(`Fila ${nroFila}: ${err.message}`)
+                omitidos_detalles.push({
+                    fila: nroFila,
+                    nombre: fila.nombre,
+                    apellido: fila.apellido,
+                    motivo: err.message
+                })
                 omitidos++
             }
         }
@@ -101,5 +107,7 @@ const importarClientes = async (req, res) => {
         res.status(500).json({ error: 'Error al procesar el archivo Excel' })
     }
 }
+
+
 
 module.exports = { importarClientes }

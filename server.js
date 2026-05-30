@@ -34,6 +34,33 @@ cron.schedule('1 0 1 * *', () => {
     generarCobranzasMes({ body: {} }, { json: console.log })
 })
 
+const ejecutarAlIniciar = async () => {
+    console.log('🚀 Iniciando cálculos automáticos...')
+
+    // 1. Actualizar cobranzas vencidas
+    await actualizarVencidas()
+
+    // 2. Verificar si ya se generaron las cobranzas del mes actual
+    const periodoActual = new Date().toISOString().slice(0, 7)
+    const { rows } = await require('./src/config/db').query(
+        'SELECT COUNT(*) FROM cobranzas WHERE periodo = $1',
+        [periodoActual]
+    )
+
+    if (parseInt(rows[0].count) === 0) {
+        console.log(`📋 No hay cobranzas para ${periodoActual}, generando...`)
+        await generarCobranzasMes(
+            { body: { periodo: periodoActual } },
+            { json: (data) => console.log(`✅ ${data.mensaje} — Generadas: ${data.generadas}`) }
+        )
+    } else {
+        console.log(`✅ Cobranzas de ${periodoActual} ya existen (${rows[0].count} registros)`)
+    }
+}
+
+// Ejecutar al iniciar
+ejecutarAlIniciar().catch(err => console.error('Error al iniciar cálculos:', err.message))
+
 app.get('/', (req, res) => {
     res.send('API de Security funcionando correctamente');
 });

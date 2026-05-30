@@ -134,18 +134,27 @@ const editarCobranza = async (req, res) => {
 // Controlador para registrar pago
 const registrarPago = async (req, res) => {
     const { id } = req.params
-    const { fecha_pago } = req.body
+    const { fecha_pago, metodo_pago } = req.body
 
     if (!fecha_pago) {
         return res.status(400).json({ error: 'La fecha de pago es requerida' })
     }
 
+    const metodo = metodo_pago || 'efectivo'
+    const metodosValidos = ['efectivo', 'qr']
+    if (!metodosValidos.includes(metodo)) {
+        return res.status(400).json({ error: 'Método de pago inválido. Debe ser: efectivo o qr' })
+    }
+
     try {
         const result = await pool.query(
             `UPDATE cobranzas
-             SET estado = 'pagado', fecha_pago = $1, dias_mora = GREATEST(0, $1::date - fecha_vencimiento)
-             WHERE id = $2 RETURNING *`,
-            [fecha_pago, id]
+             SET estado       = 'pagado',
+                 fecha_pago   = $1,
+                 metodo_pago  = $2,
+                 dias_mora    = GREATEST(0, $1::date - fecha_vencimiento)
+             WHERE id = $3 RETURNING *`,
+            [fecha_pago, metodo, id]
         )
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Cobranza no encontrada' })

@@ -77,19 +77,36 @@ const editarZona = async (req, res) => {
 const desactivarZona = async (req, res) => {
     const { id } = req.params
     try {
-        const result = await pool.query(
-            'UPDATE zonas SET activo = FALSE WHERE id = $1 RETURNING *',
-            [id]
+        const actual = await pool.query(
+            'SELECT activo FROM zonas WHERE id = $1', [id]
         )
-        if (result.rows.length === 0) {
+        if (actual.rows.length === 0) {
             return res.status(404).json({ error: 'Zona no encontrada' })
         }
-        res.json({ mensaje: 'Zona desactivada correctamente' })
+
+        const nuevoEstado = !actual.rows[0].activo
+
+        // Actualizar la zona
+        await pool.query(
+            'UPDATE zonas SET activo = $1 WHERE id = $2',
+            [nuevoEstado, id]
+        )
+
+        // Actualizar todos los clientes de esa zona también
+        const clientesActualizados = await pool.query(
+            'UPDATE clientes SET activo = $1 WHERE zona_id = $2',
+            [nuevoEstado, id]
+        )
+
+        res.json({
+            mensaje: `Zona ${nuevoEstado ? 'activada' : 'desactivada'} correctamente`,
+            clientes_afectados: clientesActualizados.rowCount
+        })
     } catch (err) {
-        console.error('Error al desactivar zona:', err.message)
+        console.error('Error al cambiar estado de zona:', err.message)
         res.status(500).json({ error: 'Error interno del servidor' })
     }
-};
+}
 
 module.exports = {
     getZonas,
